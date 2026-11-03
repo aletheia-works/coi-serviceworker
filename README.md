@@ -42,6 +42,37 @@ The page must be served over HTTPS or from `localhost`. Every cross-origin
 resource it loads must allow being embedded (CORS or
 `Cross-Origin-Resource-Policy`), as `require-corp` demands.
 
+### Waiting for isolation
+
+The script sets `window.coiServiceWorker` as soon as it runs, so a later
+script can wait for it instead of guessing with a timeout:
+
+```js
+const state = await window.coiServiceWorker.settled;
+if (state.status === 'isolated') startTheWork();
+else console.error('not isolated:', state.reason);
+```
+
+`settled` resolves once the page is isolated (`{ status: 'isolated' }`) or
+has failed (`{ status: 'failed', reason }`). It never resolves on a page that
+is about to reload, so nothing heavy starts there. `coiServiceWorker.status`
+is the current status: `pending`, `reloading`, `isolated` or `failed`. Each
+change is also sent as a `coi-serviceworker` event on `window`, with the
+state as its `detail`. On an isolated page, and when the script fails
+before registering, the event is sent while the script itself runs, so a
+listener added by a later script misses it; read `status` or await
+`settled` there. The JSR package exports the types
+`CoiServiceWorker`, `CoiState`, `CoiSettled` and `CoiFailure` for a
+`declare global` of your own.
+
+| `reason`              | Cause                                                      |
+| --------------------- | ---------------------------------------------------------- |
+| `module-script`       | The script was loaded with `type="module"`                 |
+| `no-service-worker`   | Not a secure context, or no service worker support         |
+| `registration-failed` | `navigator.serviceWorker.register` rejected                |
+| `storage-unavailable` | Session storage threw, so the page was not reloaded        |
+| `still-not-isolated`  | The page came through the worker and is still not isolated |
+
 ### In an iframe
 
 A page in an iframe is cross-origin isolated only when the page that embeds
@@ -60,7 +91,8 @@ it is isolated too.
 ## What happens on a visit
 
 1. The page is already cross-origin isolated (the server sends the headers,
-   or the worker served it): nothing happens.
+   or the worker served it): the status is `isolated`, and nothing else
+   happens.
 2. Otherwise the script registers itself as a service worker and waits until
    the worker is **active**, then reloads the page once. The reloaded page
    comes through the worker and is isolated. If the script was loaded as a
@@ -90,6 +122,7 @@ whose last release, 0.1.7, is from 2023.
 - `Cross-Origin-Embedder-Policy` is always `require-corp`; there is no
   `credentialless` mode.
 - There is no `window.coi` configuration and no deregistration message.
+  `window.coiServiceWorker` only reports the status.
 
 ## Development
 

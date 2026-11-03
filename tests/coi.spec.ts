@@ -220,3 +220,57 @@ test('a script loaded as a module says it must be a classic script', async ({
   await page.goto('/module/');
   await expect.poll(() => warnings.join('\n')).toContain('classic script');
 });
+
+test('the status says the page reloads, then that it is isolated', async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    addEventListener('coi-serviceworker', (event) => {
+      const { status, reason } = (event as CustomEvent).detail;
+      const seen = JSON.parse(sessionStorage.getItem('statuses') ?? '[]');
+      sessionStorage.setItem(
+        'statuses',
+        JSON.stringify([...seen, reason ? `${status}:${reason}` : status]),
+      );
+    }),
+  );
+  await settle(page, '/plain/');
+  await page.waitForFunction(() => window.coiServiceWorker !== undefined);
+  expect(
+    await page.evaluate(async () => ({
+      statuses: JSON.parse(sessionStorage.getItem('statuses') ?? '[]'),
+      settled: await window.coiServiceWorker.settled,
+      status: window.coiServiceWorker.status,
+    })),
+  ).toEqual({
+    statuses: ['reloading', 'isolated'],
+    settled: { status: 'isolated' },
+    status: 'isolated',
+  });
+});
+
+for (const [variant, reason] of [
+  ['broken', 'still-not-isolated'],
+  ['failing', 'registration-failed'],
+  ['module', 'module-script'],
+  ['nostorage', 'storage-unavailable'],
+  ['nosw', 'no-service-worker'],
+]) {
+  test(`the status says why the page is not isolated: ${reason}`, async ({
+    page,
+  }) => {
+    await page.goto(`/${variant}/`);
+    await expect
+      .poll(() =>
+        page
+          .evaluate(() =>
+            Promise.race([
+              window.coiServiceWorker.settled,
+              new Promise((resolve) => setTimeout(resolve, 500, null)),
+            ]),
+          )
+          .catch(() => null),
+      )
+      .toEqual({ status: 'failed', reason });
+  });
+}

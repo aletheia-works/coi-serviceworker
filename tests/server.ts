@@ -22,6 +22,11 @@ const VARIANTS: Record<string, string> = {
   };
 }
 `,
+  nosw: `if (typeof window !== 'undefined')
+  Object.defineProperty(Navigator.prototype, 'serviceWorker', {
+    get: () => undefined,
+  });
+`,
   nostorage: `if (typeof window !== 'undefined')
   for (const name of ['getItem', 'setItem', 'removeItem']) {
     const original = Storage.prototype[name];

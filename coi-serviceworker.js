@@ -38,34 +38,55 @@ if (typeof window === 'undefined') {
   }
 } else {
   const script = document.currentScript;
+  /** @type {(state: import('./coi-serviceworker.d.ts').CoiSettled) => void} */
+  let settle = () => {};
+  /** @type {import('./coi-serviceworker.d.ts').CoiServiceWorker} */
+  const coi = {
+    status: 'pending',
+    settled: new Promise((resolve) => {
+      settle = resolve;
+    }),
+  };
+  window.coiServiceWorker = coi;
+  /**
+   * @param {import('./coi-serviceworker.d.ts').CoiState} state
+   * @param {string} [warning]
+   * @param {unknown[]} details
+   */
+  const report = (state, warning, ...details) => {
+    if (warning) console.warn(`coi-serviceworker: ${warning}`, ...details);
+    Object.assign(coi, state);
+    window.dispatchEvent(
+      new CustomEvent('coi-serviceworker', { detail: state }),
+    );
+    if (state.status !== 'reloading') settle(state);
+  };
   (async () => {
     if (window.crossOriginIsolated) {
       try {
         sessionStorage.removeItem(RELOADED);
       } catch {}
-      return;
+      return report({ status: 'isolated' });
     }
-    if (!(script instanceof HTMLScriptElement)) {
-      console.warn(
-        'coi-serviceworker: load coi-serviceworker.js as a classic script, without type="module", so it can register itself as the service worker.',
+    if (!(script instanceof HTMLScriptElement))
+      return report(
+        { status: 'failed', reason: 'module-script' },
+        'load coi-serviceworker.js as a classic script, without type="module", so it can register itself as the service worker.',
       );
-      return;
-    }
-    if (!window.isSecureContext || !navigator.serviceWorker) {
-      console.warn(
-        'coi-serviceworker: a service worker cannot run here, so the page stays without cross-origin isolation.',
+    if (!window.isSecureContext || !navigator.serviceWorker)
+      return report(
+        { status: 'failed', reason: 'no-service-worker' },
+        'a service worker cannot run here, so the page stays without cross-origin isolation.',
       );
-      return;
-    }
     const served = navigator.serviceWorker.controller !== null;
     try {
       await navigator.serviceWorker.register(script.src);
     } catch (error) {
-      console.warn(
-        'coi-serviceworker: the service worker could not be registered, so the page stays without cross-origin isolation.',
+      return report(
+        { status: 'failed', reason: 'registration-failed' },
+        'the service worker could not be registered, so the page stays without cross-origin isolation.',
         error,
       );
-      return;
     }
     // A reload before the worker is active loads the page without the worker,
     // and that page is never reloaded again.
@@ -83,17 +104,17 @@ if (typeof window === 'undefined') {
       else sessionStorage.setItem(RELOADED, String(Date.now()));
     } catch {
       // Without a mark that survives the reload, a reload could repeat forever.
-      console.warn(
-        'coi-serviceworker: session storage is unavailable, so the page is not reloaded; it is cross-origin isolated from its next load.',
+      return report(
+        { status: 'failed', reason: 'storage-unavailable' },
+        'session storage is unavailable, so the page is not reloaded; it is cross-origin isolated from its next load.',
       );
-      return;
     }
-    if (reloaded) {
-      console.warn(
-        'coi-serviceworker: the page is still not cross-origin isolated after a reload through the service worker.',
+    if (reloaded)
+      return report(
+        { status: 'failed', reason: 'still-not-isolated' },
+        'the page is still not cross-origin isolated after a reload through the service worker.',
       );
-      return;
-    }
+    report({ status: 'reloading' });
     window.location.reload();
   })();
 }
