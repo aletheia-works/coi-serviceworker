@@ -40,6 +40,12 @@ if (typeof window === 'undefined') {
       } catch {}
       return;
     }
+    if (!document.currentScript) {
+      console.warn(
+        'coi-serviceworker: load coi-serviceworker.js as a classic script, without type="module", so it can register itself as the service worker.',
+      );
+      return;
+    }
     if (!window.isSecureContext || !navigator.serviceWorker) {
       console.warn(
         'coi-serviceworker: a service worker cannot run here, so the page stays without cross-origin isolation.',

@@ -16,6 +16,9 @@ that needs isolation:
 <script src="coi-serviceworker.js"></script>
 ```
 
+Load it as a classic script. With `type="module"` the script cannot find its
+own URL, so it logs a warning and leaves the page as it is.
+
 A service worker controls only its own folder and the folders below it, so
 put the file at or above every page that needs it, and at or above every
 `Worker` script those pages start. The worker whose scope holds a worker
@@ -39,14 +42,29 @@ The page must be served over HTTPS or from `localhost`. Every cross-origin
 resource it loads must allow being embedded (CORS or
 `Cross-Origin-Resource-Policy`), as `require-corp` demands.
 
+### In an iframe
+
+A page in an iframe is cross-origin isolated only when the page that embeds
+it is isolated too.
+
+- If the parent page on the same origin loads the script, the parent and the
+  frame are both isolated.
+- If only the frame loads it, the frame is not isolated and logs a warning.
+  If the parent page is inside the worker's scope, both are isolated once
+  the parent is reloaded. If it is outside, the frame is never isolated and
+  warns on every load.
+- A page on another origin cannot embed a page this package isolates. If the
+  parent sends no isolation headers, neither page is isolated. If it does,
+  the browser does not load the frame.
+
 ## What happens on a visit
 
 1. The page is already cross-origin isolated (the server sends the headers,
    or the worker served it): nothing happens.
 2. Otherwise the script registers itself as a service worker and waits until
    the worker is **active**, then reloads the page once. The reloaded page
-   comes through the worker and is isolated. If the registration fails, the
-   script logs a warning and does not reload.
+   comes through the worker and is isolated. If the script was loaded as a
+   module, or the registration fails, it logs a warning and does not reload.
 3. If the reloaded page is still not isolated, the script logs a warning and
    does not reload again. A later hard reload, which skips the worker, is
    reloaded through the worker again, unless it starts within a second of

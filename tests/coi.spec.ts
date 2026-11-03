@@ -206,3 +206,14 @@ test('a redirect to another origin keeps the URL it was redirected to', async ({
     ),
   ).toBe(`http://127.0.0.1:${new URL(page.url()).port}/v1/pixel.svg`);
 });
+
+test('a script loaded as a module says it must be a classic script', async ({
+  page,
+}) => {
+  const warnings: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'warning') warnings.push(message.text());
+  });
+  await page.goto('/module/');
+  await expect.poll(() => warnings.join('\n')).toContain('classic script');
+});

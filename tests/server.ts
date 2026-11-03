@@ -8,6 +8,7 @@ const SCRIPT = readFileSync(
 
 const VARIANTS: Record<string, string> = {
   plain: '',
+  module: '',
   slow: `if (typeof window === 'undefined')
   self.addEventListener('install', (event) =>
     event.waitUntil(new Promise((resolve) => setTimeout(resolve, 1500))),
@@ -100,9 +101,14 @@ export function serve(port: number) {
         return new Response('not found', { status: 404 });
       const extra = variant === 'headers' ? ISOLATED : {};
       if (file === '' || file === 'index.html')
-        return new Response(PAGE, {
-          headers: { 'content-type': 'text/html; charset=utf-8', ...extra },
-        });
+        return new Response(
+          variant === 'module'
+            ? PAGE.replace('<script src', '<script type="module" src')
+            : PAGE,
+          {
+            headers: { 'content-type': 'text/html; charset=utf-8', ...extra },
+          },
+        );
       if (file === 'coi-serviceworker.js')
         return new Response(prefix + SCRIPT, {
           headers: { 'content-type': 'text/javascript', ...extra },
