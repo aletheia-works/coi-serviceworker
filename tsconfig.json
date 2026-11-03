@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "preserve",
+    "lib": ["ES2022", "DOM", "WebWorker"],
+    "types": ["bun"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "files": ["coi-serviceworker.js", "coi-serviceworker.d.ts"],
+  "include": ["tests", "playwright.config.ts"]
+}

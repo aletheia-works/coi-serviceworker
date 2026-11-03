@@ -5,7 +5,7 @@ node = "latest"
 opentofu = "latest"
 
 [tasks.check]
-description = "Lint and format-check the package, workflows and infrastructure"
+description = "Lint, format-check and type-check the package, and check the workflows and infrastructure"
 run = [
   "bun run check",
   "actionlint",

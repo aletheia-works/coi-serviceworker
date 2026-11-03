@@ -3,18 +3,22 @@
 const RELOADED = 'coi-serviceworker-reloaded';
 
 if (typeof window === 'undefined') {
-  self.addEventListener('install', () => self.skipWaiting());
-  self.addEventListener('activate', (event) =>
-    event.waitUntil(self.clients.claim()),
+  const worker = /** @type {ServiceWorkerGlobalScope} */ (
+    /** @type {unknown} */ (self)
+  );
+  worker.addEventListener('install', () => worker.skipWaiting());
+  worker.addEventListener('activate', (event) =>
+    event.waitUntil(worker.clients.claim()),
   );
 
-  self.addEventListener('fetch', (event) => {
+  worker.addEventListener('fetch', (event) => {
     const { request } = event;
     if (request.cache === 'only-if-cached' && request.mode !== 'same-origin')
       return;
     event.respondWith(isolate(request));
   });
 
+  /** @param {Request} request */
   async function isolate(request) {
     const response = await fetch(request);
     if (response.status === 0) return response;
@@ -33,6 +37,7 @@ if (typeof window === 'undefined') {
     });
   }
 } else {
+  const script = document.currentScript;
   (async () => {
     if (window.crossOriginIsolated) {
       try {
@@ -40,7 +45,7 @@ if (typeof window === 'undefined') {
       } catch {}
       return;
     }
-    if (!document.currentScript) {
+    if (!(script instanceof HTMLScriptElement)) {
       console.warn(
         'coi-serviceworker: load coi-serviceworker.js as a classic script, without type="module", so it can register itself as the service worker.',
       );
@@ -54,7 +59,7 @@ if (typeof window === 'undefined') {
     }
     const served = navigator.serviceWorker.controller !== null;
     try {
-      await navigator.serviceWorker.register(document.currentScript.src);
+      await navigator.serviceWorker.register(script.src);
     } catch (error) {
       console.warn(
         'coi-serviceworker: the service worker could not be registered, so the page stays without cross-origin isolation.',

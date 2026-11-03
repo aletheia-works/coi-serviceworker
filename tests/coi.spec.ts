@@ -186,13 +186,16 @@ test('a redirected script keeps the URL it was redirected to', async ({
 }) => {
   expect((await settle(page, '/plain/')).isolated).toBe(true);
   expect(
-    await page.evaluate(async () => ({
-      url: new URL((await fetch('/latest/mod.js')).url).pathname,
-      value: await import('/latest/mod.js').then(
-        (module) => module.value,
-        () => 'failed',
-      ),
-    })),
+    await page.evaluate(
+      async (script) => ({
+        url: new URL((await fetch(script)).url).pathname,
+        value: await import(script).then(
+          (module) => module.value,
+          () => 'failed',
+        ),
+      }),
+      '/latest/mod.js',
+    ),
   ).toEqual({ url: '/v1/mod.js', value: 'imported' });
 });
 
