@@ -47,6 +47,23 @@ test('a later visit is isolated without a reload', async ({ page }) => {
   ).toBe(1);
 });
 
+test('a worker script outside the scope is blocked', async ({ page }) => {
+  expect((await settle(page, '/plain/')).isolated).toBe(true);
+  expect(
+    await page.evaluate(() => {
+      const start = (url: string) =>
+        new Promise((resolve) => {
+          const worker = new Worker(url);
+          worker.onmessage = (event) => resolve(event.data);
+          worker.onerror = () => resolve('blocked');
+          setTimeout(() => resolve('timed out'), 5000);
+        });
+      return Promise.all([start('/plain/worker.js'), start('/worker.js')]);
+    }),
+  ).toEqual(['started', 'blocked']);
+  expect(await page.evaluate(() => window.crossOriginIsolated)).toBe(true);
+});
+
 test('a page the server already isolates registers no worker', async ({
   page,
 }) => {

@@ -38,11 +38,19 @@ const PAGE = `<!doctype html>
 <title>coi-serviceworker test</title>
 `;
 
+const WORKER = `postMessage('started');
+`;
+
 export function serve(port: number) {
   return Bun.serve({
     port,
     fetch(request) {
-      const [, variant, file] = new URL(request.url).pathname.split('/');
+      const { pathname } = new URL(request.url);
+      if (pathname.endsWith('/worker.js'))
+        return new Response(WORKER, {
+          headers: { 'content-type': 'text/javascript' },
+        });
+      const [, variant, file] = pathname.split('/');
       const prefix = variant === undefined ? undefined : VARIANTS[variant];
       if (prefix === undefined)
         return new Response('not found', { status: 404 });

@@ -17,7 +17,15 @@ that needs isolation:
 ```
 
 A service worker controls only its own folder and the folders below it, so
-put the file at or above every page that needs it. From npm:
+put the file at or above every page that needs it, and at or above every
+`Worker` script those pages start. The worker whose scope holds a worker
+script's URL serves that script, not the one controlling the page. A worker
+script outside the scope gets no `Cross-Origin-Embedder-Policy`, and the
+isolated page's browser blocks it while the page itself still reports
+`crossOriginIsolated`. The test `a worker script outside the scope is
+blocked` shows this.
+
+From npm:
 
 ```sh
 npm install @aletheia-works/coi-serviceworker
