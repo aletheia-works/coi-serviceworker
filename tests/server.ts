@@ -21,6 +21,16 @@ const VARIANTS: Record<string, string> = {
   };
 }
 `,
+  nostorage: `if (typeof window !== 'undefined')
+  for (const name of ['getItem', 'setItem', 'removeItem']) {
+    const original = Storage.prototype[name];
+    Storage.prototype[name] = function (key, ...rest) {
+      if (key === 'coi-serviceworker-reloaded')
+        throw new DOMException('storage is blocked', 'SecurityError');
+      return original.call(this, key, ...rest);
+    };
+  }
+`,
   headers: '',
 };
 

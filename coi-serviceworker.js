@@ -31,7 +31,9 @@ if (typeof window === 'undefined') {
 } else {
   (async () => {
     if (window.crossOriginIsolated) {
-      sessionStorage.removeItem(RELOADED);
+      try {
+        sessionStorage.removeItem(RELOADED);
+      } catch {}
       return;
     }
     if (!window.isSecureContext || !navigator.serviceWorker) {
@@ -44,14 +46,24 @@ if (typeof window === 'undefined') {
     // A reload before the worker is active loads the page without the worker,
     // and that page is never reloaded again.
     await navigator.serviceWorker.ready;
-    if (sessionStorage.getItem(RELOADED)) {
-      sessionStorage.removeItem(RELOADED);
+    let reloaded;
+    try {
+      reloaded = sessionStorage.getItem(RELOADED);
+      if (reloaded) sessionStorage.removeItem(RELOADED);
+      else sessionStorage.setItem(RELOADED, '1');
+    } catch {
+      // Without a mark that survives the reload, a reload could repeat forever.
+      console.warn(
+        'coi-serviceworker: session storage is unavailable, so the page is not reloaded; it is cross-origin isolated from its next load.',
+      );
+      return;
+    }
+    if (reloaded) {
       console.warn(
         'coi-serviceworker: the page is still not cross-origin isolated after a reload through the service worker.',
       );
       return;
     }
-    sessionStorage.setItem(RELOADED, '1');
     window.location.reload();
   })();
 }

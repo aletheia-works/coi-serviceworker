@@ -37,6 +37,30 @@ test('a worker that is slow to install still isolates the page', async ({
   expect(result.loads).toBe(2);
 });
 
+test('without session storage the page is not reloaded and a warning says why', async ({
+  page,
+}) => {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'warning') warnings.push(message.text());
+  });
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/nostorage/');
+  await expect.poll(() => warnings.join('\n')).toContain('session storage');
+  await page.waitForTimeout(500);
+  expect(
+    await page.evaluate(() => ({
+      isolated: window.crossOriginIsolated,
+      loads: Number(sessionStorage.getItem('loads')),
+    })),
+  ).toEqual({ isolated: false, loads: 1 });
+  await page.reload();
+  await page.waitForFunction(() => window.crossOriginIsolated);
+  await page.waitForTimeout(500);
+  expect(errors).toEqual([]);
+});
+
 test('a later visit is isolated without a reload', async ({ page }) => {
   await settle(page, '/plain/');
   await page.evaluate(() => sessionStorage.setItem('loads', '0'));
