@@ -2,13 +2,20 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": false,
-  "pull-request-header": "Release Please calculated this version from Conventional Commits. Merging this PR approves it: release-please creates the tag and GitHub release, and publish.yml then publishes the package to npm.",
+  "pull-request-header": "Release Please calculated this version from Conventional Commits. Merging this PR approves it: release-please creates the tag and GitHub release, and publish.yml then publishes the package to npm and JSR.",
   "packages": {
     ".": {
       "release-type": "node",
       "initial-version": "0.1.0",
       "include-component-in-tag": false,
-      "skip-changelog": true
+      "skip-changelog": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
     }
   }
 }

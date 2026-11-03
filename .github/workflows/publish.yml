@@ -30,11 +30,12 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Require a stable tag matching package.json, from a merged bot release PR whose CI passed
+      - name: Require a stable tag matching package.json and jsr.json, from a merged bot release PR whose CI passed
         run: |
           set -euo pipefail
           [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
           test "$(jq -r .version package.json)" = "${RELEASE_TAG#v}"
+          test "$(jq -r .version jsr.json)" = "${RELEASE_TAG#v}"
           gh api "repos/$GITHUB_REPOSITORY/commits/$SOURCE_SHA/pulls" > "$RUNNER_TEMP/prs.json"
           jq --arg sha "$SOURCE_SHA" --arg repo "$GITHUB_REPOSITORY" '[.[] | select(.merged_at != null and .merge_commit_sha == $sha and .base.ref == "main" and .head.repo.full_name == $repo and .head.ref == "release-please--branches--main--components--coi-serviceworker" and .user.login == "aletheia-works-bot[bot]")] | if length == 1 then .[0] else error("exactly one merged bot release PR required") end' "$RUNNER_TEMP/prs.json" > "$RUNNER_TEMP/pr.json"
           head=$(jq -r .head.sha "$RUNNER_TEMP/pr.json")
@@ -79,3 +80,16 @@ jobs:
       - name: Publish with npm OIDC trusted publishing
         if: steps.registry.outputs.skip == 'false'
         run: npx --yes npm@latest publish --provenance --access public --ignore-scripts
+      - name: Skip a version JSR already has; stop on any other registry answer
+        id: jsr
+        run: |
+          set -euo pipefail
+          status=$(curl -s -o /dev/null -w '%{http_code}' "https://jsr.io/@aletheia-works/coi-serviceworker/${VERSION#v}_meta.json")
+          case "$status" in
+            404) echo skip=false >> "$GITHUB_OUTPUT" ;;
+            200) echo skip=true >> "$GITHUB_OUTPUT" ;;
+            *) echo "JSR answered $status" >&2; exit 1 ;;
+          esac
+      - name: Publish to JSR with OIDC
+        if: steps.jsr.outputs.skip == 'false'
+        run: npx --yes jsr publish

@@ -20,7 +20,8 @@ Both are bound to GitHub Actions app ID `15368`.
 `publish.yml` publishes to npm from the `release` environment, which only
 `v*` tags may deploy to. npm's trusted publisher names repository
 `aletheia-works/coi-serviceworker`, workflow `publish.yml` and environment
-`release`.
+`release`. JSR publishes through the GitHub repository linked in the
+package's settings on jsr.io.
 
 ## Secrets
 

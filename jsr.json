@@ -1,0 +1,17 @@
+{
+  "name": "@aletheia-works/coi-serviceworker",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./coi-serviceworker.js"
+  },
+  "publish": {
+    "include": [
+      "coi-serviceworker.js",
+      "coi-serviceworker.d.ts",
+      "README.md",
+      "LICENSE",
+      "jsr.json"
+    ]
+  }
+}

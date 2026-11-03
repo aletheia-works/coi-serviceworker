@@ -1,4 +1,5 @@
 /*! @aletheia-works/coi-serviceworker | Apache-2.0 | https://github.com/aletheia-works/coi-serviceworker */
+// @ts-self-types="./coi-serviceworker.d.ts"
 const RELOADED = 'coi-serviceworker-reloaded';
 
 if (typeof window === 'undefined') {

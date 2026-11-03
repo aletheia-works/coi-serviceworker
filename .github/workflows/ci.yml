@@ -66,7 +66,8 @@ jobs:
         with:
           install: true
           cache: true
-          install_args: node
+          install_args: bun node
+      - run: bunx jsr publish --dry-run
       - name: Require the tarball to hold the script, the readme, the license and package.json only
         run: |
           npm pack --dry-run --json > "$RUNNER_TEMP/pack.json"

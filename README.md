@@ -24,6 +24,9 @@ npm install @aletheia-works/coi-serviceworker
 cp node_modules/@aletheia-works/coi-serviceworker/coi-serviceworker.js public/
 ```
 
+The same file is on JSR as
+[`@aletheia-works/coi-serviceworker`](https://jsr.io/@aletheia-works/coi-serviceworker).
+
 The page must be served over HTTPS or from `localhost`. Every cross-origin
 resource it loads must allow being embedded (CORS or
 `Cross-Origin-Resource-Policy`), as `require-corp` demands.
@@ -73,7 +76,7 @@ Chromium, Firefox and WebKit.
 
 Conventional Commits on `main` drive Release Please. Merging its release PR
 creates the `v<version>` tag, and `publish.yml` publishes the package to npm
-with OIDC trusted publishing and provenance.
+and JSR with OIDC trusted publishing and provenance.
 
 ## License
 
