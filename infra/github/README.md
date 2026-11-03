@@ -18,10 +18,12 @@ Both are bound to GitHub Actions app ID `15368`.
 ## The `release` environment
 
 `publish.yml` publishes to npm from the `release` environment, which only
-`v*` tags may deploy to. npm's trusted publisher names repository
-`aletheia-works/coi-serviceworker`, workflow `publish.yml` and environment
-`release`. JSR publishes through the GitHub repository linked in the
-package's settings on jsr.io.
+`v*` tags may deploy to, and administrators cannot bypass that rule. npm's
+trusted publisher names repository `aletheia-works/coi-serviceworker`,
+workflow `publish.yml` and environment `release`, and the package's
+publishing access disallows tokens. JSR publishes through the GitHub
+repository linked in the package's settings on jsr.io, and the
+`@aletheia-works` scope requires every version to come from CI.
 
 ## Secrets
 

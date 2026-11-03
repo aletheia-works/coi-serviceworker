@@ -31,6 +31,9 @@ resource "github_repository_vulnerability_alerts" "this" {
 resource "github_repository_environment" "release" {
   repository  = github_repository.this.name
   environment = "release"
+
+  can_admins_bypass = false
+
   deployment_branch_policy {
     protected_branches     = false
     custom_branch_policies = true
