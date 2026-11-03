@@ -180,3 +180,29 @@ test('a worker that cannot isolate the page stops even if the clock is off', asy
   ).toEqual({ isolated: false, loads: 2 });
   expect(warnings.join('\n')).toContain('still not cross-origin isolated');
 });
+
+test('a redirected script keeps the URL it was redirected to', async ({
+  page,
+}) => {
+  expect((await settle(page, '/plain/')).isolated).toBe(true);
+  expect(
+    await page.evaluate(async () => ({
+      url: new URL((await fetch('/latest/mod.js')).url).pathname,
+      value: await import('/latest/mod.js').then(
+        (module) => module.value,
+        () => 'failed',
+      ),
+    })),
+  ).toEqual({ url: '/v1/mod.js', value: 'imported' });
+});
+
+test('a redirect to another origin keeps the URL it was redirected to', async ({
+  page,
+}) => {
+  expect((await settle(page, '/plain/')).isolated).toBe(true);
+  expect(
+    await page.evaluate(
+      async () => (await fetch('/away/pixel.svg', { mode: 'cors' })).url,
+    ),
+  ).toBe(`http://127.0.0.1:${new URL(page.url()).port}/v1/pixel.svg`);
+});

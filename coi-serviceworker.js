@@ -18,6 +18,10 @@ if (typeof window === 'undefined') {
   async function isolate(request) {
     const response = await fetch(request);
     if (response.status === 0) return response;
+    // A new Response loses the URL a redirect led to, so relative imports
+    // would resolve against the URL that was asked for.
+    if (response.redirected && request.method === 'GET')
+      return Response.redirect(response.url, 302);
     const headers = new Headers(response.headers);
     headers.set('Cross-Origin-Opener-Policy', 'same-origin');
     headers.set('Cross-Origin-Embedder-Policy', 'require-corp');

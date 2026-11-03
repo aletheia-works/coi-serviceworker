@@ -56,6 +56,14 @@ const PAGE = `<!doctype html>
 const WORKER = `postMessage('started');
 `;
 
+const MODULES: Record<string, string> = {
+  '/v1/mod.js': "export { value } from './dep.js';",
+  '/v1/dep.js': "export const value = 'imported';",
+};
+
+const PIXEL =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>';
+
 export function serve(port: number) {
   return Bun.serve({
     port,
@@ -63,6 +71,27 @@ export function serve(port: number) {
       const { pathname } = new URL(request.url);
       if (pathname.endsWith('/worker.js'))
         return new Response(WORKER, {
+          headers: { 'content-type': 'text/javascript' },
+        });
+      if (pathname === '/latest/mod.js')
+        return new Response(null, {
+          status: 302,
+          headers: { location: '/v1/mod.js' },
+        });
+      if (pathname === '/away/pixel.svg')
+        return new Response(null, {
+          status: 302,
+          headers: { location: `http://127.0.0.1:${port}/v1/pixel.svg` },
+        });
+      if (pathname === '/v1/pixel.svg')
+        return new Response(PIXEL, {
+          headers: {
+            'content-type': 'image/svg+xml',
+            'access-control-allow-origin': '*',
+          },
+        });
+      if (MODULES[pathname] !== undefined)
+        return new Response(MODULES[pathname], {
           headers: { 'content-type': 'text/javascript' },
         });
       const [, variant, file] = pathname.split('/');
