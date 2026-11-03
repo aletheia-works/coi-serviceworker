@@ -48,7 +48,9 @@ resource it loads must allow being embedded (CORS or
    comes through the worker and is isolated. If the registration fails, the
    script logs a warning and does not reload.
 3. If the reloaded page is still not isolated, the script logs a warning and
-   does not reload again.
+   does not reload again. A later hard reload, which skips the worker, is
+   reloaded through the worker again, unless it starts within a second of
+   the previous reload.
 4. If session storage is unavailable, the script cannot mark the reload, so
    it registers the worker, logs a warning and does not reload. The page is
    isolated from its next load.

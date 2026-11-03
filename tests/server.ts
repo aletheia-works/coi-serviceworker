@@ -36,6 +36,9 @@ const VARIANTS: Record<string, string> = {
 `,
 };
 
+VARIANTS.skewed = `${VARIANTS.broken}if (typeof window !== 'undefined') Date.now = () => 0;
+`;
+
 const ISOLATED = {
   'cross-origin-opener-policy': 'same-origin',
   'cross-origin-embedder-policy': 'require-corp',

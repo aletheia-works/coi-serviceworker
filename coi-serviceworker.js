@@ -42,6 +42,7 @@ if (typeof window === 'undefined') {
       );
       return;
     }
+    const served = navigator.serviceWorker.controller !== null;
     try {
       await navigator.serviceWorker.register(document.currentScript.src);
     } catch (error) {
@@ -56,9 +57,15 @@ if (typeof window === 'undefined') {
     await navigator.serviceWorker.ready;
     let reloaded;
     try {
-      reloaded = sessionStorage.getItem(RELOADED);
+      // A hard reload skips the worker and brings back the session storage the
+      // page had before it was isolated, so a page the worker did not serve
+      // counts only a mark set just before this load.
+      reloaded =
+        served ||
+        performance.timeOrigin - Number(sessionStorage.getItem(RELOADED)) <
+          1000;
       if (reloaded) sessionStorage.removeItem(RELOADED);
-      else sessionStorage.setItem(RELOADED, '1');
+      else sessionStorage.setItem(RELOADED, String(Date.now()));
     } catch {
       // Without a mark that survives the reload, a reload could repeat forever.
       console.warn(

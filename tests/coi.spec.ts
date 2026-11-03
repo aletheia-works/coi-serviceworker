@@ -88,6 +88,28 @@ test('a worker script outside the scope is blocked', async ({ page }) => {
   expect(await page.evaluate(() => window.crossOriginIsolated)).toBe(true);
 });
 
+test('a hard reload of an isolated page isolates it again', async ({
+  page,
+  context,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'only CDP can bypass the cache');
+  await settle(page, '/plain/');
+  await page.waitForTimeout(2000);
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Page.reload', { ignoreCache: true });
+  await expect
+    .poll(() =>
+      page
+        .evaluate(() => ({
+          isolated: window.crossOriginIsolated,
+          controlled: navigator.serviceWorker.controller !== null,
+        }))
+        .catch(() => null),
+    )
+    .toEqual({ isolated: true, controlled: true });
+});
+
 test('a page the server already isolates registers no worker', async ({
   page,
 }) => {
@@ -139,4 +161,22 @@ test('a worker that cannot be registered leaves a warning', async ({
   expect(
     await page.evaluate(() => Number(sessionStorage.getItem('loads'))),
   ).toBe(1);
+});
+
+test('a worker that cannot isolate the page stops even if the clock is off', async ({
+  page,
+}) => {
+  const warnings: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'warning') warnings.push(message.text());
+  });
+  await page.goto('/skewed/');
+  await page.waitForTimeout(3000);
+  expect(
+    await page.evaluate(() => ({
+      isolated: window.crossOriginIsolated,
+      loads: Number(sessionStorage.getItem('loads')),
+    })),
+  ).toEqual({ isolated: false, loads: 2 });
+  expect(warnings.join('\n')).toContain('still not cross-origin isolated');
 });
