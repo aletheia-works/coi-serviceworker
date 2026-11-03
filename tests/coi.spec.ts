@@ -274,3 +274,76 @@ for (const [variant, reason] of [
       .toEqual({ status: 'failed', reason });
   });
 }
+
+test('the worker isolates a page in its scope that does not load the script', async ({
+  page,
+}) => {
+  await settle(page, '/plain/');
+  await page.goto('/plain/bare.html');
+  expect(await page.evaluate(() => window.crossOriginIsolated)).toBe(true);
+});
+
+test('include limits the pages the worker isolates', async ({ page }) => {
+  await page.goto('/plain/app.html');
+  await page.waitForFunction(() => window.crossOriginIsolated);
+  expect(
+    await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const worker = new Worker('/plain/worker.js');
+          worker.onmessage = (event) => resolve(event.data);
+          worker.onerror = () => resolve('blocked');
+        }),
+    ),
+  ).toBe('started');
+  await page.goto('/plain/bare.html');
+  expect(await page.evaluate(() => window.crossOriginIsolated)).toBe(false);
+});
+
+test('unregister removes the worker and reloads the page without it', async ({
+  page,
+}) => {
+  await settle(page, '/plain/');
+  await page.evaluate(() => sessionStorage.setItem('loads', '0'));
+  await page.goto('/plain/off.html');
+  await expect
+    .poll(() =>
+      page
+        .evaluate(() =>
+          Promise.race([
+            window.coiServiceWorker.settled,
+            new Promise((resolve) => setTimeout(resolve, 500, null)),
+          ]),
+        )
+        .catch(() => null),
+    )
+    .toEqual({ status: 'unregistered' });
+  expect(
+    await page.evaluate(async () => ({
+      isolated: window.crossOriginIsolated,
+      loads: Number(sessionStorage.getItem('loads')),
+      registrations: (await navigator.serviceWorker.getRegistrations()).length,
+    })),
+  ).toEqual({ isolated: false, loads: 2, registrations: 0 });
+});
+
+test('a page outside include that loads the script ends not isolated', async ({
+  page,
+}) => {
+  await page.goto('/plain/outside.html');
+  await expect
+    .poll(() =>
+      page
+        .evaluate(() =>
+          Promise.race([
+            window.coiServiceWorker.settled,
+            new Promise((resolve) => setTimeout(resolve, 500, null)),
+          ]),
+        )
+        .catch(() => null),
+    )
+    .toEqual({ status: 'failed', reason: 'still-not-isolated' });
+  expect(
+    await page.evaluate(() => Number(sessionStorage.getItem('loads'))),
+  ).toBe(2);
+});

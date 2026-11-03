@@ -6,10 +6,11 @@ export type CoiFailure =
   | 'storage-unavailable'
   | 'still-not-isolated';
 
-/** Where the page ends up: isolated, or not isolated for `reason`. */
+/** Where the page ends up: isolated, not isolated for `reason`, or without the worker. */
 export type CoiSettled =
   | { status: 'isolated' }
-  | { status: 'failed'; reason: CoiFailure };
+  | { status: 'failed'; reason: CoiFailure }
+  | { status: 'unregistered' };
 
 /** A state the script reports in a `coi-serviceworker` event. */
 export type CoiState = CoiSettled | { status: 'reloading' };

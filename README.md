@@ -50,18 +50,21 @@ script can wait for it instead of guessing with a timeout:
 ```js
 const state = await window.coiServiceWorker.settled;
 if (state.status === 'isolated') startTheWork();
-else console.error('not isolated:', state.reason);
+else if (state.status === 'failed')
+  console.error('not isolated:', state.reason);
 ```
 
-`settled` resolves once the page is isolated (`{ status: 'isolated' }`) or
-has failed (`{ status: 'failed', reason }`). It never resolves on a page that
+`settled` resolves once the page is isolated (`{ status: 'isolated' }`), has
+failed (`{ status: 'failed', reason }`) or has removed the worker
+(`{ status: 'unregistered' }`, see below). It never resolves on a page that
 is about to reload, so nothing heavy starts there. `coiServiceWorker.status`
-is the current status: `pending`, `reloading`, `isolated` or `failed`. Each
-change is also sent as a `coi-serviceworker` event on `window`, with the
-state as its `detail`. On an isolated page, and when the script fails
-before registering, the event is sent while the script itself runs, so a
-listener added by a later script misses it; read `status` or await
-`settled` there. The JSR package exports the types
+is the current status: `pending`, `reloading`, `isolated`, `failed` or
+`unregistered`. Each change is also sent as a `coi-serviceworker` event on
+`window`, with the state as its `detail`. On an isolated page, and when the
+script fails before registering, the event is sent while the script itself
+runs, so a listener added by a later script misses it. Other events come
+later, but may still come before a slow script listens, so read `status`
+or await `settled` rather than rely on the event. The JSR package exports the types
 `CoiServiceWorker`, `CoiState`, `CoiSettled` and `CoiFailure` for a
 `declare global` of your own.
 
@@ -72,6 +75,39 @@ listener added by a later script misses it; read `status` or await
 | `registration-failed` | `navigator.serviceWorker.register` rejected                |
 | `storage-unavailable` | Session storage threw, so the page was not reloaded        |
 | `still-not-isolated`  | The page came through the worker and is still not isolated |
+
+### Limiting the pages it isolates
+
+Once registered, the worker isolates every page in its scope, including
+pages that never load the script, and their cross-origin resources must
+then allow being embedded. To isolate only some pages, name them with
+`include`, as a path prefix, in the script's URL. It may be repeated:
+
+```html
+<script src="/coi-serviceworker.js?include=/app/&include=/demo.html"></script>
+```
+
+The worker then adds the headers only to pages under those paths, and to
+the requests those pages make, including the `Worker` scripts they start.
+Other pages in the scope load as if the worker were not there. A page that
+loads the script must itself be under a prefix: otherwise it is reloaded
+once and ends `failed` with `still-not-isolated`. Every page that loads the
+script should use the same URL, since registering another URL replaces the
+worker for the whole scope.
+
+### Removing the worker
+
+The worker stays registered after a site stops loading the script, and it
+keeps isolating the pages in its scope. Load the script with `unregister`
+on a page in that scope to remove it:
+
+```html
+<script src="/coi-serviceworker.js?unregister"></script>
+```
+
+The script unregisters every registration whose worker is this script, in
+whatever scope it was registered, reloads the page once if that worker
+served it, and sets the status to `unregistered`.
 
 ### In an iframe
 
@@ -121,8 +157,9 @@ whose last release, 0.1.7, is from 2023.
   0.1.7 and passes here.
 - `Cross-Origin-Embedder-Policy` is always `require-corp`; there is no
   `credentialless` mode.
-- There is no `window.coi` configuration and no deregistration message.
-  `window.coiServiceWorker` only reports the status.
+- There is no `window.coi` configuration. The script's URL takes `include`
+  and `unregister` instead, and `window.coiServiceWorker` only reports the
+  status.
 
 ## Development
 

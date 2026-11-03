@@ -114,6 +114,28 @@ export function serve(port: number) {
             headers: { 'content-type': 'text/html; charset=utf-8', ...extra },
           },
         );
+      const pages: Record<string, string> = {
+        'bare.html': PAGE.replace(
+          '<script src="coi-serviceworker.js"></script>\n',
+          '',
+        ),
+        'app.html': PAGE.replace(
+          'coi-serviceworker.js',
+          'coi-serviceworker.js?include=/plain/app.html',
+        ),
+        'outside.html': PAGE.replace(
+          'coi-serviceworker.js',
+          'coi-serviceworker.js?include=/plain/app.html',
+        ),
+        'off.html': PAGE.replace(
+          'coi-serviceworker.js',
+          'coi-serviceworker.js?unregister',
+        ),
+      };
+      if (file !== undefined && pages[file] !== undefined)
+        return new Response(pages[file], {
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        });
       if (file === 'coi-serviceworker.js')
         return new Response(prefix + SCRIPT, {
           headers: { 'content-type': 'text/javascript', ...extra },

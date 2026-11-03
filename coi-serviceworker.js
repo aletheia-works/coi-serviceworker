@@ -11,12 +11,33 @@ if (typeof window === 'undefined') {
     event.waitUntil(worker.clients.claim()),
   );
 
+  const include = new URL(worker.location.href).searchParams
+    .getAll('include')
+    .map((path) => new URL(path, worker.location.href).pathname);
+  /** @param {string} url */
+  const covers = (url) =>
+    include.length === 0 ||
+    include.some((path) => new URL(url).pathname.startsWith(path));
+
   worker.addEventListener('fetch', (event) => {
     const { request } = event;
     if (request.cache === 'only-if-cached' && request.mode !== 'same-origin')
       return;
-    event.respondWith(isolate(request));
+    if (request.mode === 'navigate' && !covers(request.url)) return;
+    event.respondWith(respond(event));
   });
+
+  /** @param {FetchEvent} event */
+  async function respond(event) {
+    const { request } = event;
+    // A subresource or worker script follows the page that asked for it.
+    if (include.length > 0 && request.mode !== 'navigate') {
+      const client = await worker.clients.get(event.clientId);
+      if (client?.type === 'window' && !covers(client.url))
+        return fetch(request);
+    }
+    return isolate(request);
+  }
 
   /** @param {Request} request */
   async function isolate(request) {
@@ -61,7 +82,32 @@ if (typeof window === 'undefined') {
     );
     if (state.status !== 'reloading') settle(state);
   };
+  /** @param {HTMLScriptElement} script */
+  const unregister = async (script) => {
+    const path = new URL(script.src).pathname;
+    /** @param {ServiceWorker | null | undefined} serviceWorker */
+    const ours = (serviceWorker) =>
+      !!serviceWorker && new URL(serviceWorker.scriptURL).pathname === path;
+    const container = navigator.serviceWorker;
+    for (const registration of (await container?.getRegistrations()) ?? [])
+      if (
+        ours(
+          registration.active ??
+            registration.waiting ??
+            registration.installing,
+        )
+      )
+        await registration.unregister();
+    if (!ours(container?.controller)) return report({ status: 'unregistered' });
+    report({ status: 'reloading' });
+    window.location.reload();
+  };
   (async () => {
+    if (
+      script instanceof HTMLScriptElement &&
+      new URL(script.src).searchParams.has('unregister')
+    )
+      return unregister(script);
     if (window.crossOriginIsolated) {
       try {
         sessionStorage.removeItem(RELOADED);
