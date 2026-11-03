@@ -24,6 +24,10 @@ import {
   id = var.repository_name
 }
 
+resource "github_repository_vulnerability_alerts" "this" {
+  repository = github_repository.this.name
+}
+
 resource "github_repository_environment" "release" {
   repository  = github_repository.this.name
   environment = "release"
