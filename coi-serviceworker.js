@@ -40,7 +40,15 @@ if (typeof window === 'undefined') {
       );
       return;
     }
-    await navigator.serviceWorker.register(document.currentScript.src);
+    try {
+      await navigator.serviceWorker.register(document.currentScript.src);
+    } catch (error) {
+      console.warn(
+        'coi-serviceworker: the service worker could not be registered, so the page stays without cross-origin isolation.',
+        error,
+      );
+      return;
+    }
     // A reload before the worker is active loads the page without the worker,
     // and that page is never reloaded again.
     await navigator.serviceWorker.ready;

@@ -83,3 +83,19 @@ test('a worker that cannot isolate the page reloads it only once', async ({
   ).toEqual({ isolated: false, loads: 2 });
   expect(warnings.join('\n')).toContain('still not cross-origin isolated');
 });
+
+test('a worker that cannot be registered leaves a warning', async ({
+  page,
+}) => {
+  const warnings: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'warning') warnings.push(message.text());
+  });
+  await page.goto('/failing/');
+  await expect
+    .poll(() => warnings.join('\n'))
+    .toContain('could not be registered');
+  expect(
+    await page.evaluate(() => Number(sessionStorage.getItem('loads'))),
+  ).toBe(1);
+});

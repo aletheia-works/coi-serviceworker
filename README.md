@@ -37,7 +37,8 @@ resource it loads must allow being embedded (CORS or
    or the worker served it): nothing happens.
 2. Otherwise the script registers itself as a service worker and waits until
    the worker is **active**, then reloads the page once. The reloaded page
-   comes through the worker and is isolated.
+   comes through the worker and is isolated. If the registration fails, the
+   script logs a warning and does not reload.
 3. If the reloaded page is still not isolated, the script logs a warning and
    does not reload again.
 

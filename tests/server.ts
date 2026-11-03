@@ -22,6 +22,8 @@ const VARIANTS: Record<string, string> = {
 }
 `,
   headers: '',
+  failing: `if (typeof window === 'undefined') throw new Error('the worker fails');
+`,
 };
 
 const ISOLATED = {
