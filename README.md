@@ -106,8 +106,9 @@ on a page in that scope to remove it:
 ```
 
 The script unregisters every registration whose worker is this script, in
-whatever scope it was registered, reloads the page once if that worker
-served it, and sets the status to `unregistered`.
+whatever scope it was registered, reloads the page if that worker served
+it, and sets the status to `unregistered`. WebKit can still serve the first
+reload through the removed worker, and then the page is reloaded once more.
 
 ### In an iframe
 
