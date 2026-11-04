@@ -96,7 +96,8 @@ Other pages in the scope load as if the worker were not there. A page that
 loads the script must itself be under a prefix: otherwise it is reloaded
 once and ends `failed` with `still-not-isolated`. Every page that loads the
 script should use the same URL, since registering another URL replaces the
-worker for the whole scope.
+worker for the whole scope. A page that the old worker did not isolate is
+reloaded once through the new one.
 
 ### Removing the worker
 

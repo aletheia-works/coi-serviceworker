@@ -141,6 +141,10 @@ export function serve(port: number) {
           '<script src="coi-serviceworker.js"></script>',
           () => `<script>${prefix}${SCRIPT}</script>`,
         ),
+        'wide.html': PAGE.replace(
+          'coi-serviceworker.js',
+          'coi-serviceworker.js?include=/plain/app.html&amp;include=/plain/wide.html',
+        ),
         'off.html': PAGE.replace(
           'coi-serviceworker.js',
           'coi-serviceworker.js?unregister',

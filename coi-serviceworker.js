@@ -125,7 +125,9 @@ if (typeof window === 'undefined') {
         { status: 'failed', reason: 'no-service-worker' },
         'a service worker cannot run here, so the page stays without cross-origin isolation.',
       );
-    const served = navigator.serviceWorker.controller !== null;
+    // A worker registered from another URL, such as a narrower include, does
+    // not count: the page is reloaded through the one registered here.
+    const served = navigator.serviceWorker.controller?.scriptURL === script.src;
     let registration;
     try {
       registration = await navigator.serviceWorker.register(script.src);
@@ -142,8 +144,19 @@ if (typeof window === 'undefined') {
         'the page is outside the scope of the service worker, so it stays without cross-origin isolation; put coi-serviceworker.js in the folder of the page or above it.',
       );
     // A reload before the worker is active loads the page without the worker,
-    // and that page is never reloaded again.
+    // and that page is never reloaded again. Once another worker is active,
+    // ready resolves while this one is still installing.
     await navigator.serviceWorker.ready;
+    const incoming = registration.installing ?? registration.waiting;
+    if (incoming)
+      await new Promise((resolve) => {
+        const check = () => {
+          if (incoming.state === 'activated' || incoming.state === 'redundant')
+            resolve(undefined);
+        };
+        incoming.addEventListener('statechange', check);
+        check();
+      });
     let reloaded;
     try {
       // A hard reload skips the worker and brings back the session storage the

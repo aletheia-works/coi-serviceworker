@@ -374,3 +374,41 @@ for (const [path, reason, page] of [
       .toEqual({ status: 'failed', reason });
   });
 }
+
+test('a page that widens include is reloaded through the new worker', async ({
+  page,
+}) => {
+  await page.goto('/plain/app.html');
+  await page.waitForFunction(() => window.crossOriginIsolated);
+  // Chromium gives the next page that is not isolated the session storage
+  // from before the reload, with its mark.
+  await page.waitForTimeout(1000);
+  await page.goto('/plain/wide.html');
+  await expect
+    .poll(
+      () =>
+        page
+          .evaluate(() =>
+            Promise.race([
+              window.coiServiceWorker.settled,
+              new Promise((resolve) => setTimeout(resolve, 500, null)),
+            ]),
+          )
+          .catch(() => null),
+      { timeout: 15_000 },
+    )
+    .toEqual({ status: 'isolated' });
+  expect(
+    await page.evaluate(
+      async () =>
+        new URL(
+          (await navigator.serviceWorker.getRegistration())?.active
+            ?.scriptURL ?? '',
+        ).search,
+    ),
+  ).toBe('?include=/plain/app.html&include=/plain/wide.html');
+  await page.goto('/plain/app.html');
+  expect(await page.evaluate(() => window.crossOriginIsolated)).toBe(true);
+  await page.goto('/plain/bare.html');
+  expect(await page.evaluate(() => window.crossOriginIsolated)).toBe(false);
+});
