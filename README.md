@@ -65,9 +65,19 @@ is the current status: `pending`, `reloading`, `isolated`, `failed` or
 script fails before registering, the event is sent while the script itself
 runs, so a listener added by a later script misses it. Other events come
 later, but may still come before a slow script listens, so read `status`
-or await `settled` rather than rely on the event. The JSR package exports the types
-`CoiServiceWorker`, `CoiState`, `CoiSettled` and `CoiFailure` for a
-`declare global` of your own.
+or await `settled` rather than rely on the event.
+
+The npm package holds the types. Reference `globals` to type
+`window.coiServiceWorker` and the event, and import the rest by name:
+
+```ts
+/// <reference types="@aletheia-works/coi-serviceworker/globals" />
+import type { CoiFailure } from '@aletheia-works/coi-serviceworker/coi-serviceworker.js';
+```
+
+The JSR package exports `CoiServiceWorker`, `CoiState`, `CoiSettled` and
+`CoiFailure` too, but not the global, since JSR rejects a `declare global`.
+Write one of your own there.
 
 | `reason`              | Cause                                                      |
 | --------------------- | ---------------------------------------------------------- |

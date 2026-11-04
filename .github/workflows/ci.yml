@@ -68,10 +68,10 @@ jobs:
           cache: true
           install_args: bun node
       - run: bunx jsr publish --dry-run
-      - name: Require the tarball to hold the script, the readme, the license and package.json only
+      - name: Require the tarball to hold the script, its types, the readme, the license and package.json only
         run: |
           npm pack --dry-run --json > "$RUNNER_TEMP/pack.json"
-          jq -e '[.[0].files[].path] | sort == ["LICENSE", "README.md", "coi-serviceworker.js", "package.json"]' "$RUNNER_TEMP/pack.json"
+          jq -e '[.[0].files[].path] | sort == ["LICENSE", "README.md", "coi-serviceworker.d.ts", "coi-serviceworker.js", "globals.d.ts", "package.json"]' "$RUNNER_TEMP/pack.json"
 
   ci-required:
     name: ci-required

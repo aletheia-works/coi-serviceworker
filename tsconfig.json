@@ -10,6 +10,6 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "files": ["coi-serviceworker.js", "coi-serviceworker.d.ts"],
+  "files": ["coi-serviceworker.js", "coi-serviceworker.d.ts", "globals.d.ts"],
   "include": ["tests", "playwright.config.ts"]
 }

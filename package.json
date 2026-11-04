@@ -17,10 +17,16 @@
     "github-pages"
   ],
   "files": [
-    "coi-serviceworker.js"
+    "coi-serviceworker.js",
+    "coi-serviceworker.d.ts",
+    "globals.d.ts"
   ],
   "exports": {
     "./coi-serviceworker.js": "./coi-serviceworker.js",
+    "./coi-serviceworker.d.ts": "./coi-serviceworker.d.ts",
+    "./globals": {
+      "types": "./globals.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
