@@ -62,11 +62,11 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
-          node-version: '*'
-          check-latest: true
-          package-manager-cache: false
+          install: true
+          cache: false
+          install_args: bun
       - name: Skip a version npm already has; stop on any other registry answer
         id: registry
         run: |
@@ -79,7 +79,8 @@ jobs:
           esac
       - name: Publish with npm OIDC trusted publishing
         if: steps.registry.outputs.skip == 'false'
-        run: npx --yes npm@latest publish --provenance --access public --ignore-scripts
+        # Bun cannot publish over OIDC (oven-sh/bun#15601), and the runner's own npm is too old to.
+        run: bunx npm@latest publish --provenance --access public --ignore-scripts
       - name: Skip a version JSR already has; stop on any other registry answer
         id: jsr
         run: |
@@ -92,4 +93,4 @@ jobs:
           esac
       - name: Publish to JSR with OIDC
         if: steps.jsr.outputs.skip == 'false'
-        run: npx --yes jsr publish
+        run: bunx --bun jsr publish

@@ -1,7 +1,6 @@
 [tools]
 actionlint = "latest"
 bun = "latest"
-node = "latest"
 opentofu = "latest"
 
 [tasks.check]

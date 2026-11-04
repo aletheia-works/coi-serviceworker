@@ -49,10 +49,13 @@ jobs:
         with:
           install: true
           cache: true
-          install_args: bun node
+          install_args: bun
       - run: bun install --frozen-lockfile
-      - run: node node_modules/@playwright/test/cli.js install --with-deps ${{ matrix.browser }}
-      - run: node node_modules/@playwright/test/cli.js test --project=${{ matrix.browser }}
+      - uses: aletheia-works/.github/actions/install-playwright@0ab4b956b12760b3926ac8f768e04432404a5182 # v1.3.4
+        with:
+          browsers: ${{ matrix.browser }}
+          command: bunx --bun playwright
+      - run: bun run test --project=${{ matrix.browser }}
 
   pack:
     name: Pack
@@ -66,12 +69,12 @@ jobs:
         with:
           install: true
           cache: true
-          install_args: bun node
-      - run: bunx jsr publish --dry-run
+          install_args: bun
+      - run: bunx --bun jsr publish --dry-run
       - name: Require the tarball to hold the script, its types, the readme, the license and package.json only
         run: |
-          npm pack --dry-run --json > "$RUNNER_TEMP/pack.json"
-          jq -e '[.[0].files[].path] | sort == ["LICENSE", "README.md", "coi-serviceworker.d.ts", "coi-serviceworker.js", "globals.d.ts", "package.json"]' "$RUNNER_TEMP/pack.json"
+          bunx --bun npm@latest pack --dry-run --json > "$RUNNER_TEMP/pack.json"
+          jq -e '[.[].files[].path] | sort == ["LICENSE", "README.md", "coi-serviceworker.d.ts", "coi-serviceworker.js", "globals.d.ts", "package.json"]' "$RUNNER_TEMP/pack.json"
 
   ci-required:
     name: ci-required
