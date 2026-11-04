@@ -16,8 +16,9 @@ that needs isolation:
 <script src="coi-serviceworker.js"></script>
 ```
 
-Load it as a classic script. With `type="module"` the script cannot find its
-own URL, so it logs a warning and leaves the page as it is.
+Load it as a classic script from its file. With `type="module"`, or with the
+code inline, the script cannot find its own URL, so it logs a warning and
+leaves the page as it is.
 
 A service worker controls only its own folder and the folders below it, so
 put the file at or above every page that needs it, and at or above every
@@ -70,11 +71,13 @@ or await `settled` rather than rely on the event. The JSR package exports the ty
 
 | `reason`              | Cause                                                      |
 | --------------------- | ---------------------------------------------------------- |
-| `module-script`       | The script was loaded with `type="module"`                 |
+| `module-script`       | The script was loaded with `type="module"`, or inline      |
 | `no-service-worker`   | Not a secure context, or no service worker support         |
 | `registration-failed` | `navigator.serviceWorker.register` rejected                |
+| `outside-scope`       | The page is outside the worker's scope                     |
 | `storage-unavailable` | Session storage threw, so the page was not reloaded        |
 | `still-not-isolated`  | The page came through the worker and is still not isolated |
+| `unexpected-error`    | Something else threw; the warning shows the error          |
 
 ### Limiting the pages it isolates
 

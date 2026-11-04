@@ -105,6 +105,7 @@ if (typeof window === 'undefined') {
   (async () => {
     if (
       script instanceof HTMLScriptElement &&
+      script.src &&
       new URL(script.src).searchParams.has('unregister')
     )
       return unregister(script);
@@ -114,10 +115,10 @@ if (typeof window === 'undefined') {
       } catch {}
       return report({ status: 'isolated' });
     }
-    if (!(script instanceof HTMLScriptElement))
+    if (!(script instanceof HTMLScriptElement) || !script.src)
       return report(
         { status: 'failed', reason: 'module-script' },
-        'load coi-serviceworker.js as a classic script, without type="module", so it can register itself as the service worker.',
+        'load coi-serviceworker.js from its file as a classic script, with src and without type="module", so it can register itself as the service worker.',
       );
     if (!window.isSecureContext || !navigator.serviceWorker)
       return report(
@@ -125,8 +126,9 @@ if (typeof window === 'undefined') {
         'a service worker cannot run here, so the page stays without cross-origin isolation.',
       );
     const served = navigator.serviceWorker.controller !== null;
+    let registration;
     try {
-      await navigator.serviceWorker.register(script.src);
+      registration = await navigator.serviceWorker.register(script.src);
     } catch (error) {
       return report(
         { status: 'failed', reason: 'registration-failed' },
@@ -134,6 +136,11 @@ if (typeof window === 'undefined') {
         error,
       );
     }
+    if (!window.location.href.startsWith(registration.scope))
+      return report(
+        { status: 'failed', reason: 'outside-scope' },
+        'the page is outside the scope of the service worker, so it stays without cross-origin isolation; put coi-serviceworker.js in the folder of the page or above it.',
+      );
     // A reload before the worker is active loads the page without the worker,
     // and that page is never reloaded again.
     await navigator.serviceWorker.ready;
@@ -162,5 +169,11 @@ if (typeof window === 'undefined') {
       );
     report({ status: 'reloading' });
     window.location.reload();
-  })();
+  })().catch((error) =>
+    report(
+      { status: 'failed', reason: 'unexpected-error' },
+      'an unexpected error stopped the script, so the page stays without cross-origin isolation.',
+      error,
+    ),
+  );
 }

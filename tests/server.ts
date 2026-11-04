@@ -40,6 +40,11 @@ const VARIANTS: Record<string, string> = {
   headers: '',
   failing: `if (typeof window === 'undefined') throw new Error('the worker fails');
 `,
+  noregs: `if (typeof window !== 'undefined')
+  ServiceWorkerContainer.prototype.getRegistrations = () => {
+    throw new Error('getRegistrations fails');
+  };
+`,
 };
 
 VARIANTS.skewed = `${VARIANTS.broken}if (typeof window !== 'undefined') Date.now = () => 0;
@@ -96,6 +101,11 @@ export function serve(port: number) {
             'access-control-allow-origin': '*',
           },
         });
+      if (pathname === '/above.html')
+        return new Response(
+          PAGE.replace('coi-serviceworker.js', '/plain/coi-serviceworker.js'),
+          { headers: { 'content-type': 'text/html; charset=utf-8' } },
+        );
       if (MODULES[pathname] !== undefined)
         return new Response(MODULES[pathname], {
           headers: { 'content-type': 'text/javascript' },
@@ -126,6 +136,10 @@ export function serve(port: number) {
         'outside.html': PAGE.replace(
           'coi-serviceworker.js',
           'coi-serviceworker.js?include=/plain/app.html',
+        ),
+        'inline.html': PAGE.replace(
+          '<script src="coi-serviceworker.js"></script>',
+          () => `<script>${prefix}${SCRIPT}</script>`,
         ),
         'off.html': PAGE.replace(
           'coi-serviceworker.js',

@@ -347,3 +347,25 @@ test('a page outside include that loads the script ends not isolated', async ({
     await page.evaluate(() => Number(sessionStorage.getItem('loads'))),
   ).toBe(2);
 });
+
+for (const [path, reason, page] of [
+  ['/above.html', 'outside-scope', 'a page outside the scope'],
+  ['/plain/inline.html', 'module-script', 'an inline script'],
+  ['/noregs/off.html', 'unexpected-error', 'a script that throws'],
+]) {
+  test(`the status settles for ${page}: ${reason}`, async ({ page: tab }) => {
+    await tab.goto(path);
+    await expect
+      .poll(() =>
+        tab
+          .evaluate(() =>
+            Promise.race([
+              window.coiServiceWorker.settled,
+              new Promise((resolve) => setTimeout(resolve, 500, null)),
+            ]),
+          )
+          .catch(() => null),
+      )
+      .toEqual({ status: 'failed', reason });
+  });
+}

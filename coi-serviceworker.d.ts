@@ -3,8 +3,10 @@ export type CoiFailure =
   | 'module-script'
   | 'no-service-worker'
   | 'registration-failed'
+  | 'outside-scope'
   | 'storage-unavailable'
-  | 'still-not-isolated';
+  | 'still-not-isolated'
+  | 'unexpected-error';
 
 /** Where the page ends up: isolated, not isolated for `reason`, or without the worker. */
 export type CoiSettled =
