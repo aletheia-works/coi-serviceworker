@@ -16,8 +16,7 @@ uses it for its in-browser reproductions.
 - Correctness claims need observed evidence: a command and its output, a test
   name, or a log line. Mark anything unverified as unverified.
 - A behaviour fix starts with a Playwright test that fails before the fix, in
-  `tests/coi.spec.mts`. The spec is `.mts` because Bun parses a `.ts` spec as
-  plain JavaScript under Playwright's loader (oven-sh/bun#47175).
+  `tests/coi.spec.ts`.
 - Run everything on Bun, not Node. `bunfig.toml` covers `bun run`; `bunx` needs
   `--bun`. Publishing to npm is the one exception, as Bun cannot publish over
   OIDC (oven-sh/bun#15601).
