@@ -14,7 +14,7 @@ permissions:
 jobs:
   plan:
     if: github.repository == 'aletheia-works/coi-serviceworker' && github.event.pull_request.head.repo.full_name == github.repository
-    uses: aletheia-works/.github/.github/workflows/terraform-plan.yml@2d85c4ddca01b35127a16915f0000bc54fdc85a6 # v1.4.0
+    uses: aletheia-works/.github/.github/workflows/terraform-plan.yml@f1e71b990c2fd7086e78931ba8609b96ac68104b # v1.4.1
     with:
       working_directory: infra/github
     secrets: inherit
